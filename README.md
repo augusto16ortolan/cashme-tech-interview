@@ -11,7 +11,7 @@ This project was developed for a technical interview at CashMe.
 Before running the application, set the following environment variable:
 
 ```bash
-export API_INVERTEXTO_TOKEN=<your_api_token_here>
+API_INVERTEXTO_TOKEN=<your_api_token_here>
 ```
 This token is required for authentication with an external API (api.invertexto.com).
 
