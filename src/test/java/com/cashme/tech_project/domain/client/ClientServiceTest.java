@@ -6,6 +6,7 @@ import com.cashme.tech_project.domain.client.validator.ClientNationalIdentityVal
 import com.cashme.tech_project.domain.client.validator.ClientValidatorFactory;
 import com.cashme.tech_project.domain.exception.BusinessException;
 import com.cashme.tech_project.domain.exception.NotFoundException;
+import com.cashme.tech_project.domain.simulation.SimulationRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -34,6 +35,9 @@ class ClientServiceTest {
 
     @Mock
     private ClientRepository repository;
+
+    @Mock
+    private SimulationRepository simulationRepository;
 
     @Mock
     private ClientValidatorFactory validatorFactory;
@@ -120,6 +124,8 @@ class ClientServiceTest {
 
         when(repository.findById(any())).thenReturn(Optional.of(clientEntity));
 
+        when(simulationRepository.existsSimulationByClientId(any())).thenReturn(false);
+
         doNothing().when(repository).deleteById(any());
 
         service.deleteClient(CLIENT_ID);
@@ -139,6 +145,25 @@ class ClientServiceTest {
         });
 
         final var expectedMessage = "Client with id " + CLIENT_ID + " does not exist";
+        final var actualMessage = exception.getMessage();
+        assertTrue(actualMessage.contains(expectedMessage));
+
+        verify(repository).findById(CLIENT_ID);
+        verify(repository, never()).deleteById(any());
+    }
+
+    @Test
+    void shouldNotDeleteClientBecauseExistsSimulations() {
+        final var clientEntity = ClientEntity.builder().id(CLIENT_ID).name("Name").nationalIdentityType(NationalIdentityType.CPF).nationalIdentity("12345678900").build();
+        when(repository.findById(CLIENT_ID)).thenReturn(Optional.of(clientEntity));
+
+        when(simulationRepository.existsSimulationByClientId(CLIENT_ID)).thenReturn(true);
+
+        final var exception = assertThrows(BusinessException.class, () -> {
+            service.deleteClient(CLIENT_ID);
+        });
+
+        final var expectedMessage = "There are simulations linked to the client with id " + CLIENT_ID;
         final var actualMessage = exception.getMessage();
         assertTrue(actualMessage.contains(expectedMessage));
 

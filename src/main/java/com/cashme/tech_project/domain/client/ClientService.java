@@ -3,6 +3,7 @@ package com.cashme.tech_project.domain.client;
 import com.cashme.tech_project.domain.client.validator.ClientValidatorFactory;
 import com.cashme.tech_project.domain.exception.BusinessException;
 import com.cashme.tech_project.domain.exception.NotFoundException;
+import com.cashme.tech_project.domain.simulation.SimulationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,6 +20,7 @@ import static java.lang.String.format;
 public class ClientService {
 
     private final ClientRepository repository;
+    private final SimulationRepository simulationRepository;
     private final ClientValidatorFactory validatorFactory;
 
     public ClientEntity createClient(final ClientEntity clientEntity) {
@@ -50,6 +52,12 @@ public class ClientService {
     public void deleteClient(final UUID clientId) {
         final var existingClient = repository.findById(clientId)
                 .orElseThrow(() -> new BusinessException(format("Client with id %s does not exist", clientId)));
+
+        final var existsSimulation = simulationRepository.existsSimulationByClientId(clientId);
+
+        if (existsSimulation) {
+            throw new BusinessException(String.format("There are simulations linked to the client with id %s", clientId));
+        }
 
         repository.deleteById(existingClient.getId());
     }
